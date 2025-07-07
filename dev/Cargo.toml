@@ -1,0 +1,23 @@
+[package]
+name = "anchor-dev"
+version = "0.31.1"
+authors = ["Meng Xu <mengxu.waterloo@gmail.com>"]
+edition = "2021"
+repository = "https://github.com/meng-xu-cs/anchor"
+description = "Anchor Development Utilities"
+license = "Apache-2.0"
+
+[features]
+dev = []
+
+[dependencies]
+anyhow = "1.0.98"
+clap = { version = "4.5.40", features = ["derive"] }
+itertools = "0.14.0"
+lazy_static = "1.5.0"
+log = "0.4.27"
+regex = "1.11.1"
+simplelog = "0.12.2"
+walkdir = "2.5.0"
+
+anchor-cli = { path = "../cli" }
