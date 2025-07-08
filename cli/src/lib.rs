@@ -8,7 +8,7 @@ use anchor_lang::idl::{IdlAccount, IdlInstruction, ERASED_AUTHORITY};
 use anchor_lang::{AccountDeserialize, AnchorDeserialize, AnchorSerialize, Discriminator};
 use anchor_lang_idl::convert::convert_idl;
 use anchor_lang_idl::types::{Idl, IdlArrayLen, IdlDefinedFields, IdlType, IdlTypeDefTy};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use checks::{check_anchor_version, check_deps, check_idl_build_feature, check_overflow};
 use clap::{CommandFactory, Parser};
 use dirs::home_dir;
@@ -375,6 +375,12 @@ pub enum Command {
     Completions {
         #[clap(value_enum)]
         shell: clap_complete::Shell,
+    },
+    /// MIR-based analysis and interpretation
+    Mir {
+        /// Output directory (default to .anchor/mir)
+        #[clap(short, long)]
+        output: Option<PathBuf>,
     },
 }
 
@@ -952,6 +958,13 @@ fn process_command(opts: Opts) -> Result<()> {
                 &mut std::io::stdout(),
             );
             Ok(())
+        }
+        Command::Mir { output } => {
+            let output = output
+                .unwrap_or_else(|| std::env::current_dir().unwrap().join(".anchor").join("mir"));
+            fs::create_dir_all(&output)
+                .map_err(|e| anyhow!("unable to create output directory: {e}"))?;
+            mir(&output)
         }
     }
 }
@@ -4886,6 +4899,77 @@ fn strip_workspace_prefix(absolute_path: String) -> String {
 /// Create a new [`RpcClient`] with `confirmed` commitment level instead of the default(finalized).
 fn create_client<U: ToString>(url: U) -> RpcClient {
     RpcClient::new_with_commitment(url, CommitmentConfig::confirmed())
+}
+
+/// Entrypoint for MIR-based analysis and processing
+pub fn mir(output: &Path) -> Result<()> {
+    let cfg = Config::discover(&ConfigOverride::default())?.expect("Not in workspace.");
+    let anchor_dir = match cfg.path().parent() {
+        None => bail!("Anchor.toml does not have a parent directory."),
+        Some(p) => p,
+    };
+
+    match Manifest::discover()? {
+        None => bail!("No Cargo.toml found."),
+        Some(manifest) => {
+            let manifest_dir = match manifest.path().parent() {
+                None => bail!("Cargo.toml does not have a parent directory."),
+                Some(p) => p,
+            };
+            if manifest_dir == anchor_dir {
+                // build the entire workspace
+                for path in cfg.get_rust_program_list()? {
+                    build_mir_single_package(&path, output)?;
+                }
+            } else {
+                // build a single package
+                build_mir_single_package(manifest_dir, output)?;
+            }
+        }
+    }
+
+    // done
+    Ok(())
+}
+
+fn build_mir_single_package(manifest_dir: &Path, output_dir: &Path) -> Result<()> {
+    // parse the manifest file
+    let manifest = match Manifest::discover_from_path(manifest_dir.to_path_buf())? {
+        None => bail!("Cargo.toml does not exist when expected to exist."),
+        Some(m) => m,
+    };
+    let package = match &manifest.package {
+        None => bail!("Expect the Cargo.toml manifest to be a package."),
+        Some(pkg) => pkg,
+    };
+
+    // prepare the output workspace
+    let path_wks = output_dir.join(&package.name);
+    fs::create_dir(&path_wks)?;
+
+    // run the build process
+    let output = std::process::Command::new("cargo")
+        .arg("+nightly")
+        .arg("rustc")
+        .arg("--")
+        .arg("-Z")
+        .arg("unpretty=mir-cfg")
+        .current_dir(manifest_dir)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::inherit())
+        .output()
+        .map_err(|e| anyhow::format_err!("{}", e.to_string()))?;
+
+    // dump the mir output
+    if !output.status.success() {
+        bail!("Cargo rustc failed");
+    }
+    let mir_dump = String::from_utf8(output.stdout)
+        .map_err(|e| anyhow::format_err!("Non-UTF8 character in output: {e}"))?;
+    fs::write(path_wks.join("mir-cfg.dot"), mir_dump)?;
+
+    // done
+    Ok(())
 }
 
 #[cfg(test)]
