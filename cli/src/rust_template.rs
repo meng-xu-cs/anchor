@@ -179,8 +179,7 @@ fn cargo_toml(name: &str, with_mollusk: bool) -> String {
     let dev_dependencies = if with_mollusk {
         r#"
 [dev-dependencies]
-mollusk-svm = "=0.0.15"
-solana-program = "~2.1"
+mollusk-svm = "~0.4"
 "#
     } else {
         ""
@@ -695,7 +694,7 @@ impl TestTemplate {
                 }
             }
             Self::Rust => {
-                // Do not initilize git repo
+                // Do not initialize git repo
                 let exit = std::process::Command::new("cargo")
                     .arg("new")
                     .arg("--vcs")
@@ -751,10 +750,9 @@ description = "Created with Anchor"
 edition = "2021"
 
 [dependencies]
-anchor-client = "{0}"
-{1} = {{ version = "0.1.0", path = "../programs/{1}" }}
+anchor-client = "{VERSION}"
+{name} = {{ version = "0.1.0", path = "../programs/{name}" }}
 "#,
-        VERSION, name,
     )
 }
 
