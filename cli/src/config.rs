@@ -404,12 +404,14 @@ pub enum BootstrapMode {
 pub enum ProgramArch {
     Bpf,
     Sbf,
+    Mir,
 }
 impl ProgramArch {
     pub fn build_subcommand(&self) -> &str {
         match self {
             Self::Bpf => "build-bpf",
             Self::Sbf => "build-sbf",
+            Self::Mir => "build",
         }
     }
 }
