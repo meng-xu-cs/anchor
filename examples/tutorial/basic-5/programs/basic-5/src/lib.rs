@@ -6,6 +6,7 @@ declare_id!("DuT6R8tQGYa8ACYXyudFJtxDppSALLcmK39b7918jeSC");
 pub mod basic_5 {
     use super::*;
 
+    #[inline(never)]
     pub fn create(ctx: Context<Create>) -> Result<()> {
         let action_state = &mut ctx.accounts.action_state;
         // * - means dereferencing
@@ -16,6 +17,7 @@ pub mod basic_5 {
         Ok(())
     }
 
+    #[inline(never)]
     pub fn walk(ctx: Context<Walk>) -> Result<()> {
         let action_state = &mut ctx.accounts.action_state;
         // Lets change the robot action state to "walk"
@@ -24,6 +26,7 @@ pub mod basic_5 {
         Ok(())
     }
 
+    #[inline(never)]
     pub fn run(ctx: Context<Run>) -> Result<()> {
         let action_state = &mut ctx.accounts.action_state;
         // Lets change the robot action state to "run"
@@ -32,6 +35,7 @@ pub mod basic_5 {
         Ok(())
     }
 
+    #[inline(never)]
     pub fn jump(ctx: Context<Jump>) -> Result<()> {
         let action_state = &mut ctx.accounts.action_state;
         // Lets change the robot action state to "jump"
@@ -40,6 +44,7 @@ pub mod basic_5 {
         Ok(())
     }
 
+    #[inline(never)]
     pub fn reset(ctx: Context<Reset>) -> Result<()> {
         let action_state = &mut ctx.accounts.action_state;
         // Lets reset the robot action states
