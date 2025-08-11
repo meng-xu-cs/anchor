@@ -6,6 +6,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 mod basic_2 {
     use super::*;
 
+    #[inline(never)]
     pub fn create(ctx: Context<Create>, authority: Pubkey) -> Result<()> {
         let counter = &mut ctx.accounts.counter;
         counter.authority = authority;
@@ -13,6 +14,7 @@ mod basic_2 {
         Ok(())
     }
 
+    #[inline(never)]
     pub fn increment(ctx: Context<Increment>) -> Result<()> {
         let counter = &mut ctx.accounts.counter;
         counter.count += 1;

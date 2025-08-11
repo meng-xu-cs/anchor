@@ -5,10 +5,13 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 #[program]
 pub mod puppet {
     use super::*;
+
+    #[inline(never)]
     pub fn initialize(_ctx: Context<Initialize>) -> Result<()> {
         Ok(())
     }
 
+    #[inline(never)]
     pub fn set_data(ctx: Context<SetData>, data: u64) -> Result<()> {
         let puppet = &mut ctx.accounts.puppet;
         puppet.data = data;
