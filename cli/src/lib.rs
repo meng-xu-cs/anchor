@@ -1823,9 +1823,22 @@ fn _build_rust_cwd(
     arch: &ProgramArch,
     cargo_args: Vec<String>,
 ) -> Result<()> {
-    let exit = std::process::Command::new("cargo")
-        .arg(arch.build_subcommand())
-        .args(cargo_args.clone())
+    let mut args_split = cargo_args.split(|arg| arg == "++");
+
+    let mut command = std::process::Command::new("cargo");
+    command.arg(arch.build_subcommand());
+    if let Some(cargo_sbf_args) = args_split.next() {
+        command.args(cargo_sbf_args);
+    }
+    if let Some(cargo_build_args) = args_split.next() {
+        command.arg("--");
+        command.args(cargo_build_args);
+    }
+    if args_split.next().is_some() {
+        return Err(anyhow!("Too many '++' separators found in cargo arguments"));
+    }
+
+    let exit = command
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()
